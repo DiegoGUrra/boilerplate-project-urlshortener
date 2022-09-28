@@ -15,8 +15,8 @@ let urlSchema = new mongoose.Schema({
   }
 });
 let Url = mongoose.model("Url",urlSchema);
-let counterSchema = new moongose.Schema({counter:Number});
-let Counter = moongose.model("Counter",counterSchema);
+let counterSchema = new mongoose.Schema({counter:Number});
+let Counter = mongoose.model("Counter",counterSchema);
 
 app.use(cors());
 
@@ -38,9 +38,9 @@ const findCounter= (done)=>{
     done(null,data);
     console.log(data);
   });
-}
+};
 const createUrl = (url,done) => {
-  let url = new Url({name: url,short_url:1});
+  let newUrl = new Url({name: url,short_url:1});
   person.save((err,data)=>{
     if (err){
       done(err,null);
