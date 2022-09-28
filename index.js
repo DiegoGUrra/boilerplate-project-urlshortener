@@ -49,10 +49,11 @@ const createUrl = (url,done) => {
     done(null,data);
   });
 };
-app.post("/",(req,res,next)=>(
-  
-  req.query.url
-));
+app.post("/",(req,res,next)=>{
+  res.send({"url":req.body.url});
+  findCounter();
+}
+);
 app.listen(port, function() {
   console.log(`Listening on port ${port}`);
 });
