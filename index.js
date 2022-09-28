@@ -20,6 +20,7 @@ let Counter = mongoose.model("Counter",counterSchema);
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use('/public', express.static(`${process.cwd()}/public`));
 
 app.get('/', function(req, res) {
@@ -49,6 +50,7 @@ const createUrl = (url,done) => {
   });
 };
 app.post("/",(req,res,next)=>(
+  
   req.query.url
 ));
 app.listen(port, function() {
