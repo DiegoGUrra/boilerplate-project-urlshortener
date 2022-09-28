@@ -20,7 +20,7 @@ let Counter = mongoose.model("Counter",counterSchema);
 
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false }));
 app.use('/public', express.static(`${process.cwd()}/public`));
 
 app.get('/', function(req, res) {
@@ -36,8 +36,17 @@ const findCounter= (done)=>{
     if (err){
       done(err,null);
     }
-    done(null,data);
+    if (data.length===0){
+      let counter = new Counter({counter:1});
+      counter.save((err,data)=>{
+        if(err){
+          done(err,null);
+        }
+        done(null,data);
+      })
+    }
     console.log(data);
+    done(null,data);
   });
 };
 const createUrl = (url,done) => {
@@ -49,9 +58,9 @@ const createUrl = (url,done) => {
     done(null,data);
   });
 };
-app.post("/",(req,res,next)=>{
-  res.send({"url":req.body.url});
-  findCounter();
+app.post("/api/shorturl",(req,res,next)=>{
+  res.json({"url":req.body.url});
+  findCounter(next);
 }
 );
 app.listen(port, function() {
