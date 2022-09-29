@@ -2,13 +2,17 @@ require('dotenv').config();
 const mongoose = require("mongoose");
 const express = require('express');
 const cors = require('cors');
+const dns = require('node:dns');
 const app = express();
 
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 // Basic Configuration
 const port = process.env.PORT || 3000;
 let urlSchema = new mongoose.Schema({
-  name: String,
+  original_url: {
+    type:String,
+    unique: true
+  },
   short_url: {
     type: Number,
     unique: true
@@ -32,7 +36,7 @@ app.get('/api/hello', function(req, res) {
   res.json({ greeting: 'hello API' });
 });
 const findCounter= (done)=>{
-  Counter.find({},(err,data)=>{
+Counter.findOne({},(err,data)=>{
     if (err){
       done(err,null);
     }
@@ -44,23 +48,104 @@ const findCounter= (done)=>{
         }
         done(null,data);
       })
+    }else{
+      done(null,data);
     }
-    console.log(data);
-    done(null,data);
   });
 };
+const updateCounter=(done)=>{
+  findCounter((err,data)=>{
+    if(err==null){
+      //console.log(data);
+      data.counter = data.counter+1;
+      data.save((err,data)=>{
+        if(err){
+          done(err,null);
+        }
+        else{
+          done(null,data);
+        }
+      });
+    }
+    done(err,null);
+  });
+};
+const findUrl = (url,done)=>{
+  Url.findOne({original_url:url}, (err,data)=>{
+    if(err){
+      done(err,null)
+    }
+    else{
+      done(null,data);
+    }
+  })
+}
 const createUrl = (url,done) => {
-  let newUrl = new Url({name: url,short_url:1});
-  person.save((err,data)=>{
+  let newUrl = new Url(url);
+  newUrl.save((err,data)=>{
     if (err){
       done(err,null);
     }
-    done(null,data);
+    else{
+      done(null,data);
+    }
   });
 };
+const verifyDns=(url, done)=>{
+  let regexp = /^https?:\/\//i;
+  if(regexp.test(url)){
+    let newUrl= url.replace(regexp,"");
+    dns.lookup(newUrl,{all:true},(err,data)=>{
+      if(err){
+        done(err,null);
+      }
+      else{
+        done(null,data);
+      } 
+    })
+  }
+  else{
+    done(Error("url invalida"),null);
+  }
+};
 app.post("/api/shorturl",(req,res,next)=>{
-  res.json({"url":req.body.url});
-  findCounter(next);
+  //res.json({"url":req.body.url});
+  //verify if the dns is valid
+  verifyDns(req.body.url,(err,verifyDnsData)=>{
+    //if it is valid
+    if(err==null){
+      //find if the url is in the database
+      findUrl(req.body.url,(err,findUrlData)=>{
+        //if the url exist in the db
+        if(findUrlData.length!==0){
+          console.log(findUrlData.original_url);
+          res.json({original_url: findUrlData.original_url,short_url: findUrlData.short_url});
+          return next();
+        }
+        else{
+          findCounter((err,counterData)=>{
+            if(err==null){
+              updateCounter((err,updateData)=>{
+                if(err==null){
+                  console.log(counterData);
+                  createUrl({original_url:req.body.url,short_url:counterData.counter},(err,createUrlData)=>{
+                    if(err==null){
+                      res.json(createUrlData);
+                      return next();
+                    }
+                  });
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+    else{
+      res.json({'error':'Invalid URL'});
+      return next();
+    }
+  });
 }
 );
 app.listen(port, function() {
