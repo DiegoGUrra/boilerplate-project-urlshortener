@@ -78,8 +78,8 @@ const findUrl = (url,done)=>{
     else{
       done(null,data);
     }
-  })
-}
+  });
+};
 const createUrl = (url,done) => {
   let newUrl = new Url(url);
   newUrl.save((err,data)=>{
@@ -92,9 +92,8 @@ const createUrl = (url,done) => {
   });
 };
 const verifyDns=(url, done)=>{
-  let regexp = /^https?:\/\//i;
-  if(regexp.test(url)){
-    let newUrl= url.replace(regexp,"");
+  try{
+    let newUrl= new URL(url).hostname;
     dns.lookup(newUrl,{all:true},(err,data)=>{
       if(err){
         done(err,null);
@@ -103,10 +102,13 @@ const verifyDns=(url, done)=>{
         done(null,data);
       } 
     })
+    
   }
-  else{
+  catch(e){
     done(Error("url invalida"),null);
+
   }
+  
 };
 app.post("/api/shorturl",(req,res,next)=>{
   //res.json({"url":req.body.url});
@@ -117,7 +119,7 @@ app.post("/api/shorturl",(req,res,next)=>{
       //find if the url is in the database
       findUrl(req.body.url,(err,findUrlData)=>{
         //if the url exist in the db
-        if(findUrlData.length!==0){
+        if(err==null && findUrlData){
           console.log(findUrlData.original_url);
           res.json({original_url: findUrlData.original_url,short_url: findUrlData.short_url});
           return next();
@@ -130,7 +132,7 @@ app.post("/api/shorturl",(req,res,next)=>{
                   console.log(counterData);
                   createUrl({original_url:req.body.url,short_url:counterData.counter},(err,createUrlData)=>{
                     if(err==null){
-                      res.json(createUrlData);
+                      res.json({original_url: createUrlData.original_url,short_url: createUrlData.short_url});
                       return next();
                     }
                   });
