@@ -36,22 +36,22 @@ app.get('/api/hello', function(req, res) {
   res.json({ greeting: 'hello API' });
 });
 const findCounter= (done)=>{
-Counter.findOne({},(err,data)=>{
-    if (err){
-      done(err,null);
-    }
-    if (data.length===0){
-      let counter = new Counter({counter:1});
-      counter.save((err,data)=>{
-        if(err){
-          done(err,null);
-        }
-        done(null,data);
-      })
-    }else{
+  Counter.findOne({},(err,data)=>{
+  if (err){
+    done(err,null);
+  }
+  if (data == null){
+    let counter = new Counter({counter:1});
+    counter.save((err,data)=>{
+      if(err){
+        done(err,null);
+      }
       done(null,data);
-    }
-  });
+    })
+  }else{
+    done(null,data);
+  }
+});
 };
 const updateCounter=(done)=>{
   findCounter((err,data)=>{
