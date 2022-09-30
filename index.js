@@ -71,7 +71,7 @@ const updateCounter=(done)=>{
   });
 };
 const findUrl = (url,done)=>{
-  Url.findOne({original_url:url}, (err,data)=>{
+  Url.findOne(url, (err,data)=>{
     if(err){
       done(err,null)
     }
@@ -110,6 +110,7 @@ const verifyDns=(url, done)=>{
   }
   
 };
+
 app.post("/api/shorturl",(req,res,next)=>{
   //res.json({"url":req.body.url});
   //verify if the dns is valid
@@ -117,7 +118,7 @@ app.post("/api/shorturl",(req,res,next)=>{
     //if it is valid
     if(err==null){
       //find if the url is in the database
-      findUrl(req.body.url,(err,findUrlData)=>{
+      findUrl({original_url:req.body.url},(err,findUrlData)=>{
         //if the url exist in the db
         if(err==null && findUrlData){
           console.log(findUrlData.original_url);
@@ -150,6 +151,18 @@ app.post("/api/shorturl",(req,res,next)=>{
   });
 }
 );
+app.get("/api/shorturl/:urlId",(req,res)=>{
+  //console.log(req.params.urlId);
+  findUrl({"short_url":req.params.urlId},(err,data)=>{
+    console.log(data);
+    if(data!==null){
+      res.redirect(data.original_url);
+    }
+    else{
+      res.json({"error": "No short URL found for the given input"});
+    }
+  });
+});
 app.listen(port, function() {
   console.log(`Listening on port ${port}`);
 });
